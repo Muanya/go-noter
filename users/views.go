@@ -1,10 +1,11 @@
-package auth
+package users
 
 import (
 	"database/sql"
 	"fmt"
 	"log"
 
+	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -38,4 +39,10 @@ func setup() {
 		fmt.Printf("%d: %s %s\n", id, uName, email)
 
 	}
+}
+
+func Health(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"message": "OK!",
+	})
 }

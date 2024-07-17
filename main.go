@@ -3,21 +3,17 @@ package main
 import (
 	"fmt"
 
-	"github.com/Muanya/go-noter/auth"
+	"github.com/Muanya/go-noter/users"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	fmt.Println("Hello")
-	auth.Run()
+	setRoutes()
 }
 
 func setRoutes() {
 	r := gin.Default()
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
+	r.GET("/health", users.Health)
 	r.Run()
 }
