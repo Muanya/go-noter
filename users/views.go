@@ -35,32 +35,6 @@ func GetAll(ctx *gin.Context) {
 
 }
 
-func GetSingle(ctx *gin.Context) {
-
-	userId := ctx.Param("id")
-
-	rows, err := db.Conn.Query("SELECT id, username, email, firstname, lastname FROM user WHERE id = ?", userId)
-
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	usrs, err := FormatRowsToUsers(rows)
-
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	if len(usrs) > 1 {
-		ctx.JSON(http.StatusForbidden, gin.H{"error": "Multiple Users found"})
-	} else {
-		ctx.JSON(http.StatusOK, usrs[0])
-	}
-
-}
-
 func GetUser(ctx *gin.Context) {
 
 	claims, err := auth.ParseClaim(ctx)
