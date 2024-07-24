@@ -3,6 +3,9 @@ package users
 import (
 	"database/sql"
 	"fmt"
+
+	"github.com/Muanya/go-noter/db"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // id
@@ -26,6 +29,68 @@ func New() *User {
 	return &User{}
 }
 
+func (user *User) GetByUsername(username string) error {
+
+	err := db.Conn.QueryRow("SELECT id, username, email, firstname, lastname FROM user WHERE username = ?", username).Scan(&user.Id, &user.Username, &user.Email, &user.Firstname, &user.Lastname)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (user *User) GetById(id int) error {
+
+	err := db.Conn.QueryRow("SELECT id, username, email, firstname, lastname FROM user WHERE id = ?", id).Scan(&user.Id, &user.Username, &user.Email, &user.Firstname, &user.Lastname)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (user *User) GetFromRequest(data *RegisterRequest) error {
+	// todo: add authentication to each field
+
+	user.Email = fmt.Sprintf("%v", (*data).Email)
+	user.Username = fmt.Sprintf("%v", (*data).Username)
+	user.Firstname = fmt.Sprintf("%v", (*data).Firstname)
+	user.Lastname = fmt.Sprintf("%v", (*data).Lastname)
+
+	return nil
+
+}
+
+func GetHashPassword(data *RegisterRequest) ([]byte, error) {
+	password := (*data).Password
+
+	if password == "" {
+		return nil, fmt.Errorf("password field missing")
+	}
+
+	// Hash password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, fmt.Errorf("failed to hash password")
+	}
+
+	return hashedPassword, nil
+}
+
+func CompareHashPassword(password, validPassword string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(validPassword), []byte(password))
+	if err != nil {
+		fmt.Println("Invalid Password:", err)
+		return false
+	}
+
+	return true
+}
+
 func FormatRowsToUsers(rows *sql.Rows) ([]User, error) {
 	var usrs []User
 
@@ -40,47 +105,4 @@ func FormatRowsToUsers(rows *sql.Rows) ([]User, error) {
 
 	return usrs, nil
 
-}
-
-func GetUsersFromRequest(data *Response) (*User, error) {
-
-	var newUser User
-	if value, exists := (*data)[FieldNames[1]]; exists {
-		newUser.Email = fmt.Sprintf("%v", value)
-	} else {
-		return nil, fmt.Errorf("email is Invalid or empty")
-	}
-
-	if value, exists := (*data)[FieldNames[2]]; exists {
-		newUser.Username = fmt.Sprintf("%v", value)
-	} else {
-		return nil, fmt.Errorf("username is Invalid or empty")
-	}
-
-	if value, exists := (*data)[FieldNames[3]]; exists {
-		newUser.Firstname = fmt.Sprintf("%v", value)
-	} else {
-		return nil, fmt.Errorf("first name is Invalid or empty")
-	}
-
-	if value, exists := (*data)[FieldNames[4]]; exists {
-		newUser.Lastname = fmt.Sprintf("%v", value)
-	} else {
-		return nil, fmt.Errorf("last name is Invalid or empty")
-	}
-
-	return &newUser, nil
-
-}
-
-func GetUserPassword(data *Response) (string, error) {
-	value, exists := (*data)["password"]
-
-	if value == "" || !exists {
-		return "", fmt.Errorf("password field missing")
-	}
-
-	password, _ := value.(string)
-
-	return password, nil
 }

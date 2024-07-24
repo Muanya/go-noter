@@ -1,9 +1,9 @@
 package users
 
 import (
-	"log"
 	"net/http"
 
+	"github.com/Muanya/go-noter/auth"
 	"github.com/Muanya/go-noter/db"
 	"github.com/gin-gonic/gin"
 )
@@ -61,50 +61,37 @@ func GetSingle(ctx *gin.Context) {
 
 }
 
-func CreateUser(ctx *gin.Context) {
+func GetUser(ctx *gin.Context) {
 
-	var data Response
-
-	// Call BindJSON to bind the received JSON to newUser.
-	if err := ctx.BindJSON(&data); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	newUser, err := GetUsersFromRequest(&data)
+	claims, err := auth.ParseClaim(ctx)
 
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Not Authorized!"})
 		return
 	}
 
-	password, err := GetUserPassword(&data)
+	var user User
 
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// Extract user ID from claims
+	username, _ := (*claims)["sub"].(string)
+
+	// Query user from database using ID
+	if err = user.GetByUsername(username); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Not Authorized!"})
 		return
 	}
 
-	log.Println(newUser)
+	// Return user details as JSON response
+	ctx.JSON(http.StatusOK, user)
+}
 
-	// Add the new user to the database.
-	result, err := db.Conn.Exec(
-		"INSERT INTO user (username, email, firstname, lastname, password) VALUES (?, ?, ?, ?, ?)",
-		newUser.Username, newUser.Email, newUser.Firstname, newUser.Lastname, password,
-	)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+func Logout(ctx *gin.Context) {
 
-	log.Println(result.LastInsertId())
-	userId, err := result.LastInsertId()
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	newUser.Id = int(userId)
+	auth.ClearTokenHandler(ctx)
 
-	ctx.JSON(http.StatusCreated, newUser)
+	// Return success response indicating logout was successful
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "Logout successful",
+	})
 
 }

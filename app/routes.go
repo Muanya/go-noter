@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/Muanya/go-noter/auth"
 	"github.com/Muanya/go-noter/db"
 	"github.com/Muanya/go-noter/users"
 	"github.com/gin-gonic/gin"
@@ -21,15 +22,17 @@ func Init() {
 	unauthorized := router.Group("")
 	{
 		unauthorized.GET("/health", users.Health)
+		unauthorized.POST("/login", users.LoginUser)
+		unauthorized.POST("/register", users.RegisterUser)
+		unauthorized.POST("/logout", users.Logout)
 
 	}
 
 	usr := router.Group("/users")
-	// usr.Use(auth.AuthMiddleWare())
+	usr.Use(auth.JWTVerifyMiddleWare())
 	{
-		usr.GET("/", users.GetAll)
-		usr.POST("/", users.CreateUser)
-		usr.GET("/:id", users.GetSingle)
+		usr.GET("/", users.GetUser)
+		usr.GET("/all", users.GetAll)
 	}
 
 	// run server on a different goroutine
