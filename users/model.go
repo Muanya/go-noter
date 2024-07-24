@@ -1,7 +1,6 @@
 package users
 
 import (
-	"database/sql"
 	"fmt"
 
 	"github.com/Muanya/go-noter/db"
@@ -91,7 +90,16 @@ func CompareHashPassword(password, validPassword string) bool {
 	return true
 }
 
-func FormatRowsToUsers(rows *sql.Rows) ([]User, error) {
+func GetAllUsers() ([]User, error) {
+
+	rows, err := db.Conn.Query("SELECT id, username, email, firstname, lastname FROM user")
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
 	var usrs []User
 
 	for rows.Next() {

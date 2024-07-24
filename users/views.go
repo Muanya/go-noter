@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/Muanya/go-noter/auth"
-	"github.com/Muanya/go-noter/db"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,16 +14,8 @@ func Health(c *gin.Context) {
 }
 
 func GetAll(ctx *gin.Context) {
-	rows, err := db.Conn.Query("SELECT id, username, email, firstname, lastname FROM user")
 
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	defer rows.Close()
-
-	usrs, err := FormatRowsToUsers(rows)
+	usrs, err := GetAllUsers()
 
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -36,6 +27,8 @@ func GetAll(ctx *gin.Context) {
 }
 
 func GetUser(ctx *gin.Context) {
+
+	// Get User from token
 
 	claims, err := auth.ParseClaim(ctx)
 
