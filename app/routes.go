@@ -18,6 +18,7 @@ func Init() {
 	defer db.Close()
 
 	router := gin.Default()
+	router.Use(auth.CORSMiddleware())
 
 	unauthorized := router.Group("")
 	{

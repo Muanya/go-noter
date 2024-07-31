@@ -42,11 +42,12 @@ func LoginUser(ctx *gin.Context) {
 		return
 	}
 
+	var token string
 	// set jwt token in cookie
-	if err = auth.SetCookieHandler(ctx, request.Username); err != nil {
+	if token, err = auth.SetCookieHandler(ctx, request.Username); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Logged in successfully"})
+	ctx.JSON(http.StatusOK, gin.H{"message": "Logged in successfully", "token": token})
 }

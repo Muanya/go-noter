@@ -35,16 +35,16 @@ func GenerateToken(username string) (string, error) {
 }
 
 // Handler function to set a JWT cookie
-func SetCookieHandler(c *gin.Context, username string) error {
+func SetCookieHandler(c *gin.Context, username string) (string, error) {
 	// Generate the JWT token
 	tokenString, err := GenerateToken(username)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// Set the cookie
 	c.SetCookie(TokenKeyword, tokenString, 3600*tokenValidHrs, path, host, secure, httpOnly)
-	return nil
+	return tokenString, nil
 }
 
 func ParseClaim(c *gin.Context) (*jwt.MapClaims, error) {

@@ -67,7 +67,7 @@ func RegisterUser(ctx *gin.Context) {
 	newUser.Id = int(userId)
 
 	// set jwt token in cookie
-	if err = auth.SetCookieHandler(ctx, newUser.Username); err != nil {
+	if _, err = auth.SetCookieHandler(ctx, newUser.Username); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
 		return
 	}
