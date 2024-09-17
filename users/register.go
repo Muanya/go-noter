@@ -11,7 +11,7 @@ import (
 
 type RegisterRequest struct {
 	Email     string `json:"email" binding:"required"`
-	Username  string `json:"user_name" binding:"required"`
+	Username  string `json:"user_name"`
 	Firstname string `json:"first_name" binding:"required"`
 	Lastname  string `json:"last_name" binding:"required"`
 	Password  string `json:"password" binding:"required"`
@@ -67,7 +67,7 @@ func RegisterUser(ctx *gin.Context) {
 	newUser.Id = int(userId)
 
 	// set jwt token in cookie
-	if _, err = auth.SetCookieHandler(ctx, newUser.Username); err != nil {
+	if _, err = auth.GenerateToken(newUser.Username); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
 		return
 	}

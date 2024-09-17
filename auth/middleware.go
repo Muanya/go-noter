@@ -10,7 +10,16 @@ import (
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		var origin string
+		header := c.Request.Header["Origin"]
+
+		if len(header) > 0 {
+			origin = header[0]
+		} else {
+			origin = "*"
+		}
+
+		c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT")
@@ -41,7 +50,9 @@ func AuthMiddleWare() gin.HandlerFunc {
 
 func JWTVerifyMiddleWare() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		tokenHeader, err := ctx.Cookie(TokenKeyword)
+		// tokenHeader, err := ctx.Cookie(TokenKeyword)
+
+		tokenHeader, err := Header(ctx)
 
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Missing Authorization"})

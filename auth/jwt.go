@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -9,19 +11,37 @@ import (
 
 // private
 var (
-	tokenValidHrs = 3 // token expires in 3 hrs
+	tokenValidHrs = 1 // token expires in 3 hrs
 	host          = "127.0.0.1"
 	secure        = false
-	httpOnly      = true
+	httpOnly      = false
 	path          = "/"
 )
 
 // public
 var (
-	SigningMethod *jwt.SigningMethodHMAC = jwt.SigningMethodHS256
-	SecretKey                            = "my-secret-key"
-	TokenKeyword                         = "token"
+	SigningMethod        *jwt.SigningMethodHMAC = jwt.SigningMethodHS256
+	SecretKey                                   = "D#z+p@/9-$crt*k&y!"
+	AuthorizationKeyword                        = "Authorization"
+	BearerKeyword                               = "Bearer"
 )
+
+func Header(ctx *gin.Context) (string, error) {
+
+	bearerToken := ctx.GetHeader(AuthorizationKeyword)
+
+	if bearerToken == "" {
+		return "", fmt.Errorf("missing authorization")
+	}
+
+	parts := strings.Split(bearerToken, " ")
+
+	if len(parts) != 2 || parts[0] != BearerKeyword {
+		return "", fmt.Errorf("invalid authorization header format")
+	}
+
+	return parts[1], nil
+}
 
 func GenerateToken(username string) (string, error) {
 	mappedClaims := jwt.MapClaims{
@@ -34,30 +54,17 @@ func GenerateToken(username string) (string, error) {
 
 }
 
-// Handler function to set a JWT cookie
-func SetCookieHandler(c *gin.Context, username string) (string, error) {
-	// Generate the JWT token
-	tokenString, err := GenerateToken(username)
-	if err != nil {
-		return "", err
-	}
-
-	// Set the cookie
-	c.SetCookie(TokenKeyword, tokenString, 3600*tokenValidHrs, path, host, secure, httpOnly)
-	return tokenString, nil
-}
-
 func ParseClaim(c *gin.Context) (*jwt.MapClaims, error) {
 
 	// Retrieve JWT token from cookie
-	cookie, err := c.Cookie(TokenKeyword)
+	tkn, err := Header(c)
 
 	if err != nil {
 		return nil, err
 	}
 
 	// Parse JWT token with claims
-	token, err := jwt.ParseWithClaims(cookie, &jwt.MapClaims{}, func(token *jwt.Token) (any, error) {
+	token, err := jwt.ParseWithClaims(tkn, &jwt.MapClaims{}, func(token *jwt.Token) (any, error) {
 		return []byte(SecretKey), nil
 	})
 
@@ -67,10 +74,10 @@ func ParseClaim(c *gin.Context) (*jwt.MapClaims, error) {
 
 	// Extract claims from token
 	claims, ok := token.Claims.(*jwt.MapClaims)
+
 	if !ok {
 		return nil, gin.Error{}
 	}
-
 	return claims, nil
 
 }
@@ -78,6 +85,6 @@ func ParseClaim(c *gin.Context) (*jwt.MapClaims, error) {
 func ClearTokenHandler(c *gin.Context) {
 
 	// Clear JWT token by setting an empty value and expired time in the cookie
-	c.SetCookie(TokenKeyword, "", -3600, path, host, secure, httpOnly)
+	c.SetCookie(AuthorizationKeyword, "", -3600, path, host, secure, httpOnly)
 
 }

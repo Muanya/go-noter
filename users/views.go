@@ -40,10 +40,10 @@ func GetUser(ctx *gin.Context) {
 	var user User
 
 	// Extract user ID from claims
-	username, _ := (*claims)["sub"].(string)
+	usernameEmail, _ := (*claims)["sub"].(string)
 
 	// Query user from database using ID
-	if err = user.GetByUsername(username); err != nil {
+	if err = user.GetByUsernameOrEmail(usernameEmail); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Not Authorized!"})
 		return
 	}

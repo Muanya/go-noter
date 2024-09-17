@@ -1,7 +1,11 @@
 package users
 
 import (
+	"database/sql"
 	"fmt"
+	"log"
+	"math/rand"
+	"strings"
 
 	"github.com/Muanya/go-noter/db"
 	"golang.org/x/crypto/bcrypt"
@@ -28,9 +32,9 @@ func New() *User {
 	return &User{}
 }
 
-func (user *User) GetByUsername(username string) error {
+func (user *User) GetByUsernameOrEmail(value string) error {
 
-	err := db.Conn.QueryRow("SELECT id, username, email, firstname, lastname FROM user WHERE username = ?", username).Scan(&user.Id, &user.Username, &user.Email, &user.Firstname, &user.Lastname)
+	err := db.Conn.QueryRow("SELECT id, username, email, firstname, lastname FROM user WHERE username = $1 OR email = $2", value, value).Scan(&user.Id, &user.Username, &user.Email, &user.Firstname, &user.Lastname)
 
 	if err != nil {
 		return err
@@ -56,7 +60,7 @@ func (user *User) GetFromRequest(data *RegisterRequest) error {
 	// todo: add authentication to each field
 
 	user.Email = fmt.Sprintf("%v", (*data).Email)
-	user.Username = fmt.Sprintf("%v", (*data).Username)
+	user.Username = fmt.Sprintf("%v", GenerateUsername(data))
 	user.Firstname = fmt.Sprintf("%v", (*data).Firstname)
 	user.Lastname = fmt.Sprintf("%v", (*data).Lastname)
 
@@ -113,4 +117,38 @@ func GetAllUsers() ([]User, error) {
 
 	return usrs, nil
 
+}
+
+func checkUsernameExists(username string) bool {
+	var exists bool
+	query := `SELECT COUNT(1) FROM user WHERE username = ?`
+	err := db.Conn.QueryRow(query, username).Scan(&exists)
+
+	fmt.Print(exists)
+
+	if err != nil && err != sql.ErrNoRows {
+		log.Fatalf("Error checking username: %v", err)
+	}
+	return exists
+}
+
+func GenerateUsername(data *RegisterRequest) string {
+	username := (*data).Username
+	fname := (*data).Firstname
+	lname := (*data).Lastname
+
+	if username != "" {
+		return username
+	}
+
+	baseUsername := strings.ToLower(fmt.Sprintf("%s.%s", fname, lname))
+	username = baseUsername
+
+	for checkUsernameExists(username) {
+		randomSuffix := fmt.Sprintf("%04d", rand.Intn(10000))
+		username = fmt.Sprintf("%s%s", baseUsername, randomSuffix)
+		fmt.Print(username)
+	}
+
+	return username
 }

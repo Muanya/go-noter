@@ -24,7 +24,7 @@ func LoginUser(ctx *gin.Context) {
 	}
 
 	var validPassword string
-	err := db.Conn.QueryRow("SELECT password FROM user WHERE username = ?", request.Username).Scan(&validPassword)
+	err := db.Conn.QueryRow("SELECT password FROM user WHERE username = $1 Or email = $2", request.Username, request.Username).Scan(&validPassword)
 
 	if err == sql.ErrNoRows {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
@@ -44,7 +44,7 @@ func LoginUser(ctx *gin.Context) {
 
 	var token string
 	// set jwt token in cookie
-	if token, err = auth.SetCookieHandler(ctx, request.Username); err != nil {
+	if token, err = auth.GenerateToken(request.Username); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
 		return
 	}
